@@ -91,14 +91,19 @@ const App: React.FC = () => {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-             <a 
-               href="https://guojianapi.com" 
-               target="_blank" 
-               rel="noopener noreferrer"
-               className="text-xs text-gray-500 hover:text-pink-600 transition-colors flex items-center gap-1 hover:underline"
-             >
-               购买 Key <ExternalLink size={10} />
-             </a>
+             <div className="flex flex-col items-end mr-1">
+                <a 
+                  href="https://guojianapi.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-xs text-gray-600 hover:text-pink-600 transition-colors flex items-center gap-1 hover:underline font-medium"
+                >
+                  购买 Key <ExternalLink size={10} />
+                </a>
+                <span className="text-[10px] text-gray-400 leading-none mt-0.5">
+                  或联系微信: teachAIGC
+                </span>
+             </div>
              <div className="relative group">
                 <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200 focus-within:border-pink-300 focus-within:ring-2 focus-within:ring-pink-100 transition-all">
                   <Key size={14} className="text-gray-400" />
