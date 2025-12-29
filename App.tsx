@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { UploadedImage, GenerationSettings, AppStatus, GeneratedImage, ModelType, Resolution } from './types';
 import ImageUploader from './components/ImageUploader';
 import { generateFashionImages } from './services/geminiService';
-import { Sparkles, Download, Image as ImageIcon, Loader2, AlertCircle, Key, User, ExternalLink } from 'lucide-react';
+import { Sparkles, Download, Image as ImageIcon, Loader2, AlertCircle, Key, User, ExternalLink, RefreshCw } from 'lucide-react';
 
 const App: React.FC = () => {
   // Inputs
@@ -56,10 +56,15 @@ const App: React.FC = () => {
 
     try {
       const images = await generateFashionImages(settings);
-      if (images.length === 0) {
-        throw new Error("生成失败，未能获取到有效图片。");
-      }
+      // Even if all failed, we display them as failed cards
       setResults(images);
+      
+      const successCount = images.filter(i => i.status === 'success').length;
+      if (successCount === 0 && images.length > 0) {
+         // Optionally set a global warning, but status is technically finished
+         setErrorMsg("生成全部失败，请检查网络或 Key 配额");
+      }
+      
       setStatus(AppStatus.SUCCESS);
     } catch (err: any) {
       console.error(err);
@@ -76,6 +81,8 @@ const App: React.FC = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  const successCount = results.filter(r => r.status === 'success').length;
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900 pb-20">
@@ -291,8 +298,8 @@ const App: React.FC = () => {
                   生成结果 (9:16)
                 </h2>
                 {results.length > 0 && (
-                   <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                     成功 {results.length} 张
+                   <span className={`text-xs font-medium px-2 py-1 rounded-full ${successCount > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                     成功 {successCount}/{results.length} 张
                    </span>
                 )}
               </div>
@@ -301,21 +308,41 @@ const App: React.FC = () => {
                 {results.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {results.map((img) => (
-                      <div key={img.id} className="group relative rounded-xl overflow-hidden bg-gray-100 shadow-md aspect-[9/16]">
-                        <img 
-                          src={img.url} 
-                          alt="Generated" 
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-6">
-                          <button
-                            onClick={() => downloadImage(img.url, img.id)}
-                            className="bg-white/90 hover:bg-white text-gray-900 font-medium py-2 px-6 rounded-full shadow-lg flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
-                          >
-                            <Download size={18} />
-                            保存
-                          </button>
-                        </div>
+                      <div key={img.id} className="group relative rounded-xl overflow-hidden bg-gray-100 shadow-md aspect-[9/16] border border-gray-100">
+                        {img.status === 'success' ? (
+                          <>
+                            <img 
+                              src={img.url} 
+                              alt="Generated" 
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-6">
+                              <button
+                                onClick={() => downloadImage(img.url, img.id)}
+                                className="bg-white/90 hover:bg-white text-gray-900 font-medium py-2 px-6 rounded-full shadow-lg flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
+                              >
+                                <Download size={18} />
+                                保存
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-400 p-4 text-center">
+                            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-3">
+                               <AlertCircle size={20} className="text-red-400" />
+                            </div>
+                            <p className="text-sm font-medium text-gray-600">生成失败</p>
+                            <p className="text-xs mt-1 text-gray-400 max-w-[80%] leading-relaxed">
+                              {img.error || "未知错误，请重试"}
+                            </p>
+                            <button 
+                              onClick={handleGenerate} 
+                              className="mt-4 text-xs flex items-center gap-1 text-pink-500 hover:text-pink-600 font-medium"
+                            >
+                              <RefreshCw size={12} /> 重试
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

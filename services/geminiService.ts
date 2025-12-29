@@ -33,8 +33,6 @@ export const generateFashionImages = async (
     throw new Error("必须上传模特图片");
   }
 
-  const generatedImages: GeneratedImage[] = [];
-
   // --- Prompt Construction ---
   const inputs: any[] = [];
   
@@ -114,7 +112,7 @@ export const generateFashionImages = async (
     };
   }
 
-  // Execute Generation
+  // Execute Generation in Parallel with error handling per request
   const promises = Array.from({ length: settings.imageCount }).map(async (_, index) => {
     try {
       const response = await ai.models.generateContent({
@@ -131,18 +129,29 @@ export const generateFashionImages = async (
           if (part.inlineData && part.inlineData.data) {
              return {
                 id: `gen_${Date.now()}_${index}`,
-                url: `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`
+                url: `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`,
+                status: 'success' as const
              };
           }
         }
       }
-      return null;
-    } catch (error) {
+      return {
+        id: `fail_${Date.now()}_${index}`,
+        url: '',
+        status: 'failed' as const,
+        error: "生成内容为空"
+      };
+    } catch (error: any) {
       console.error(`Generation ${index + 1} failed:`, error);
-      throw error;
+      return {
+        id: `fail_${Date.now()}_${index}`,
+        url: '',
+        status: 'failed' as const,
+        error: error.message || "生成失败"
+      };
     }
   });
 
   const results = await Promise.all(promises);
-  return results.filter((img): img is GeneratedImage => img !== null);
+  return results;
 };

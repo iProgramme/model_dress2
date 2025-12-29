@@ -23,6 +23,8 @@ export interface GenerationSettings {
 export interface GeneratedImage {
   id: string;
   url: string;
+  status: 'success' | 'failed';
+  error?: string;
 }
 
 export enum AppStatus {
